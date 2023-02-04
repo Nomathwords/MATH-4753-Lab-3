@@ -1,0 +1,55 @@
+---
+title: "Task 7: Lab 3"
+author: "Hunter DeVoe"
+date: "`r Sys.Date()`"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Inputs and Outputs
+
+You can embed Shiny inputs and outputs in your document. Outputs are automatically updated whenever inputs change.  This demonstrates how a standard R plot can be made interactive by wrapping it in the Shiny `renderPlot` function. In the case below we use the `selectInput` function to create the input widget used to drive the plot.
+
+There are other widgets we can make!!
+
+Notice that there are essentially only two parts
+
+ 1. Input (Controls)
+ 2. Render (Often a plot)
+
+```{r slr, echo=FALSE}
+library(ggplot2)
+# DATA
+spruce = read.csv("SPRUCE.csv")
+
+# INPUTS
+inputPanel(
+  selectInput("plotg", "Choose plot type",
+      list(`points` = c("Points", "Segments", "Linear Regression", "Full")
+      )
+    )
+)
+
+renderPlot({
+  
+ Points = ggplot(spruce, aes(x=BHDiameter,y=Height,color=BHDiameter)) + geom_point() + ggtitle("Height Vs BHDiameter          Hunter DeVoe")
+ 
+ Segments = Points + geom_line()
+ 
+ LinearRegression = Points + geom_smooth(method = "lm")
+ 
+ Full = ggplot(spruce, aes(x=BHDiameter,y=Height,color=BHDiameter)) + geom_point() + geom_line() + geom_smooth(method="lm") + ggtitle("Height Vs BHDiameter          Hunter DeVoe")
+ 
+ if(input$plotg == "Points") print(Points)
+ 
+ if(input$plotg == "Segments")   print(Segments)
+ 
+ if(input$plotg == "Linear Regression")   print(LinearRegression)
+ 
+ if(input$plotg == "Full")   print(Full)
+})
+```

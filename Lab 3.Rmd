@@ -1,0 +1,236 @@
+---
+title: "Lab 3: MATH 4753"
+author: "Hunter DeVoe"
+date: "January 30, 2023"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+    theme: spacelab
+    highlight: pygments
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(pacman, tidyverse, lattice, shiny, s20x)
+```
+
+# Task 1
+
+* Get the current working directory
+
+```{r}
+getwd()
+```
+
+# Task 2
+
+* Read in the SPRUCE.csv file and print the first six lines
+
+```{r}
+spruce = read.csv("SPRUCE.csv")
+head(spruce)
+```
+
+# Task 3
+
+* Make a scatter plot of the SPRUCE data (y axis will be the Height).  
+  * Make sure it has a heading  
+  * Y axis is labelled  
+  * X axis is labelled  
+  * Points are filled blue, use pch=21 and bg="Blue"  
+  * The points are 1.2Xs the default character size (use cex=1.2)  
+  * The y and x axes are adjusted to include 0 and 1.1 * max(y), and 0 and 1.1 * max(x) respectively  
+  
+```{r}
+plot(Height~BHDiameter, bg = "Blue", pch = 21, cex = 1.2, ylim = c(0, max(Height) * 1.1), xlim = c(0, max(BHDiameter) * 1.1), main = "Tree Height vs Breast Height Diameter", xlab = "Height of Tree (m)", ylab = "Breast Height Diameter", data = spruce)
+```
+
+* Does there appear to be a straight line relationship?  
+
+There does not appear to be a straight line relationship. If you analyze the scatter plot very closely, you can see the points increase and then begin to plateau when BHDiameter is between 15 and 25.  
+
+* Load the library s20x and make a lowess smoother scatter plot using trendscatter() (try a few values of f, f=0.5,0.6,0.7) record all three plots, use layout().
+
+```{r}
+layout = layout(matrix(1:3, nrow = 1, ncol = 3, byrow = TRUE))
+tsone = trendscatter(Height~BHDiameter, f = 0.5, data = spruce)
+tstwo = trendscatter(Height~BHDiameter, f = 0.6, data = spruce)
+tsthree = trendscatter(Height~BHDiameter, f = 0.7, data = spruce)
+```
+
+* We will assume (this may in fact be a bad assumption) a straight line relationship, use lm and make a linear model object, call it spruce.lm  
+
+```{r}
+spruce.lm = with(spruce, lm(Height~BHDiameter))
+```
+
+* Make a new scatter plot and add the least squares regression line to the points -abline(spruce.lm) – record the plot.  
+
+```{r}
+layout = layout(1)
+
+plot(Height~BHDiameter, bg = "Blue", pch = 21, cex = 1.2, ylim = c(0, max(Height) * 1.1), xlim = c(0, max(BHDiameter) * 1.1), main = "Tree Height vs Breast Height Diameter", xlab = "Height of Tree (m)", ylab = "Breast Height Diameter", data = spruce)
+
+abline(spruce.lm)
+```
+
+* Comment on the graph, is a straight line appropriate? Consider the smoother curve also.  
+
+A straight line definitely works - the scatterplot does not have such a drastic curve that the line looks wrong. However, it is easy to tell that our straight line is not as accurate as possible and a curved line would be more suitable for our data. This point is backed up by the fact that we created three trendscatter plots, and all three of them had a clear curve in them near the top.  
+
+# Task 4
+
+* Divide the graphical interface into 4 equal areas, use layout.show(4) and record the picture  
+  * In the first square, plot the scatter plot and fitted line.  
+  * In the second square plot the same with the residual line segments (deviations about the fitted line).     (RSS=residual sum of squares)  
+  * In the third square plot the mean of Y versus X i.e. mean of Height vs BHDiameter, with the fitted        line and deviations of the fitted line from the mean height added. (MSS=model sum of squares)  
+  * In the fourth square plot the mean of Height versus BHDiameter and show the total deviation line          segments y ̂=y ̅. (TSS=total sum of squares)  
+  
+```{r}
+layout(matrix(1:4,nr=2,nc=2,byrow=TRUE))
+
+# Plot 1
+plot(Height~BHDiameter, bg = "Blue", pch = 21, cex = 1.2, ylim = c(0, max(Height) * 1.1), xlim = c(0, max(BHDiameter) * 1.1), xlab = "Height", ylab = "BHDiameter", data = spruce)
+abline(spruce.lm)
+
+# Plot 2
+plot(Height~BHDiameter, bg = "Blue", pch = 21, cex = 1.2, ylim = c(0, max(Height) * 1.1), xlim = c(0, max(BHDiameter) * 1.1), xlab = "Height", ylab = "BHDiameter", data = spruce)
+
+#make yhat the estimates of E[HEAT | RATIO]
+yhat=with(spruce,predict(spruce.lm,data.frame(BHDiameter)))
+#OR you could use -- (yhat values the predicted values for all the RATIO values )
+yhat=fitted(spruce.lm)
+
+# Draw in segments making the residuals (regression deviations)
+with(spruce,{
+segments(BHDiameter,Height,BHDiameter,yhat)
+})
+abline(spruce.lm)
+
+# Plot 3
+plot(Height~BHDiameter, bg = "Blue", pch = 21, cex = 1.2, ylim = c(0, max(Height) * 1.1), xlim = c(0, max(BHDiameter) * 1.1), xlab = "Height", ylab = "BHDiameter", data = spruce)
+
+#make nieve model
+with(spruce, abline(h=mean(Height)))
+abline(spruce.lm)
+
+#make the explained deviations (explained by the model)
+with(spruce, segments(BHDiameter,mean(Height),BHDiameter,yhat,col="Red"))
+
+# Plot 4
+with(spruce,
+plot(Height~BHDiameter, bg = "Blue", pch = 21, cex = 1.2, ylim = c(0, max(Height) * 1.1), xlim = c(0, max(BHDiameter) * 1.1), xlab = "Height", ylab = "BHDiameter", data = spruce))
+
+with(spruce,abline(h=mean(Height)))
+with(spruce, segments(BHDiameter,Height,BHDiameter,mean(Height),col="Green"))
+```
+
+
+* Calculate TSS, MSS, and RSS  
+
+```{r}
+TSS=with(spruce,sum((Height-mean(Height))^2))
+MSS=with(spruce,sum((yhat-mean(Height))^2))
+RSS=with(spruce,sum((Height-yhat)^2))
+
+cat("TSS = ", TSS, "\n")
+cat("MSS = ", MSS, "\n")
+cat("RSS = ", RSS, "\n")
+```
+
+* Calculate $\frac{MSS}{TSS}$, and interpret it!  
+
+```{r}
+DividedValue <- MSS / TSS
+DividedValue
+```
+$\frac{MSS}{TSS}$ is a measure that assesses the ability of a model to predict or explain an outcome when using linear regression. Also known as $R^2$, a high value indicates that the model is a good fit for the data. If we round the value we got, we can see that 0.66, or 66%, of the variability of the dependent variable in the data set has been accounted for, and the other 34% is still unaccounted for.  
+
+* Does TSS = MSS + RSS?
+
+```{r}
+TSS
+MSS + RSS
+```
+
+We can see that TSS does equal MSS + RSS  
+
+# Task 5
+
+* Summarize spruce.lm and paste it here
+
+```{r}
+summary(spruce.lm)
+```
+
+* What is the value of the slope?  
+
+The slope value is 0.48147  
+
+* What is the value of the intercept?  
+
+The value of the intercept is about 9.14684  
+
+* Write down the equation of the fitted line  
+
+$Y = 0.48 + 9.15 * X$, where $Y = Height$ and $X = BHDiameter$  
+
+* Predict the Height of spruce when the Diameter is 15, 18, and 20cm (use predict())  
+
+```{r}
+testdata <- data.frame(BHDiameter = 15)
+predict(spruce.lm, newdata = testdata)
+
+testdata <- data.frame(BHDiameter = 18)
+predict(spruce.lm, newdata = testdata)
+
+testdata <- data.frame(BHDiameter = 20)
+predict(spruce.lm, newdata = testdata)
+```
+
+# Task 6
+
+* Use appropriate code using the ggplot2 package to make a plot of Height Vs Diameter with shading lines and legend
+
+```{r}
+g=ggplot(spruce, aes(x=BHDiameter,y=Height,color=BHDiameter))
+g=g+geom_point() + geom_line()+ geom_smooth(method="lm")
+g+ggtitle("Height Vs BHDiameter")
+```
+
+# Task 7
+
+<center>
+!["Points"](Points.png){ width=70% }
+</center>
+
+<center>
+!["Segments"](Segments.png){ width=70% }
+</center>
+
+<center>
+!["Linear Regression"](Linear Regression.png){ width=70% }
+</center>
+
+<center>
+!["Full"](Full.png){ width=70% }
+</center>
+
+```{r}
+# CLEAN UP #################################################
+
+# Clear environment
+rm(list = ls()) 
+
+# Clear packages
+p_unload(all)  # Remove all add-ons
+
+# Clear plots
+dev.off()  # But only if there IS a plot
+
+# Clear console
+cat("\014")  # ctrl+L
+
+# Clear mind :)
+```
